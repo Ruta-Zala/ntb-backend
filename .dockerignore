@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+*.pem
+/src/doc-db/*.pem
+networking-toolbox-api-deployment-service-ingress-prod.yaml
+package-lock.json
+Dockerfile
+CHANGELOG.md
+/src/doc-db/index.js
+README.md
