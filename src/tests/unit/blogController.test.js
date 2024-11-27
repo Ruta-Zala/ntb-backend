@@ -60,12 +60,17 @@ describe('Blog Controller and Model Unit Tests', () => {
           },
         });
         const res = mockResponse();
-        Blog.prototype.save = jest.fn().mockRejectedValue(new Error('Database error'));
+        Blog.prototype.save = jest
+          .fn()
+          .mockRejectedValue(new Error('Database error'));
 
         await createBlog(req, res);
 
         expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.json).toHaveBeenCalledWith({ error: 'Database error', message: 'Error creating blog' });
+        expect(res.json).toHaveBeenCalledWith({
+          error: 'Database error',
+          message: 'Error creating blog',
+        });
       });
     });
 
@@ -102,7 +107,11 @@ describe('Blog Controller and Model Unit Tests', () => {
       it('should fetch a blog by ID', async () => {
         const req = mockRequest({ params: { id: '1' } });
         const res = mockResponse();
-        const blogData = { title: 'Test Blog', description: 'Desc', author: 'Author' };
+        const blogData = {
+          title: 'Test Blog',
+          description: 'Desc',
+          author: 'Author',
+        };
 
         Blog.findById = jest.fn().mockResolvedValue(blogData);
 
@@ -126,7 +135,9 @@ describe('Blog Controller and Model Unit Tests', () => {
       it('should return 500 if database error occurs while fetching blog by ID', async () => {
         const req = mockRequest({ params: { id: '1' } });
         const res = mockResponse();
-        Blog.findById = jest.fn().mockRejectedValue(new Error('Database error'));
+        Blog.findById = jest
+          .fn()
+          .mockRejectedValue(new Error('Database error'));
 
         await getBlogById(req, res);
 
@@ -137,9 +148,16 @@ describe('Blog Controller and Model Unit Tests', () => {
 
     describe('updateBlog', () => {
       it('should update a blog successfully', async () => {
-        const req = mockRequest({ params: { id: '1' }, body: { title: 'Updated Title' } });
+        const req = mockRequest({
+          params: { id: '1' },
+          body: { title: 'Updated Title' },
+        });
         const res = mockResponse();
-        const updatedBlog = { title: 'Updated Title', description: 'Desc', author: 'Author' };
+        const updatedBlog = {
+          title: 'Updated Title',
+          description: 'Desc',
+          author: 'Author',
+        };
 
         Blog.findByIdAndUpdate = jest.fn().mockResolvedValue(updatedBlog);
 
@@ -150,7 +168,10 @@ describe('Blog Controller and Model Unit Tests', () => {
       });
 
       it('should return 404 if blog not found for updating', async () => {
-        const req = mockRequest({ params: { id: '999' }, body: { title: 'Updated Title' } });
+        const req = mockRequest({
+          params: { id: '999' },
+          body: { title: 'Updated Title' },
+        });
         const res = mockResponse();
         Blog.findByIdAndUpdate = jest.fn().mockResolvedValue(null);
 
@@ -171,9 +192,14 @@ describe('Blog Controller and Model Unit Tests', () => {
       });
 
       it('should return 500 if database error occurs while updating blog', async () => {
-        const req = mockRequest({ params: { id: '1' }, body: { title: 'Updated Title' } });
+        const req = mockRequest({
+          params: { id: '1' },
+          body: { title: 'Updated Title' },
+        });
         const res = mockResponse();
-        Blog.findByIdAndUpdate = jest.fn().mockRejectedValue(new Error('Database error'));
+        Blog.findByIdAndUpdate = jest
+          .fn()
+          .mockRejectedValue(new Error('Database error'));
 
         await updateBlog(req, res);
 
@@ -209,14 +235,15 @@ describe('Blog Controller and Model Unit Tests', () => {
       it('should return 500 if database error occurs during blog deletion', async () => {
         const req = mockRequest({ params: { id: '1' } });
         const res = mockResponse();
-        Blog.findByIdAndDelete = jest.fn().mockRejectedValue(new Error('Database error'));
+        Blog.findByIdAndDelete = jest
+          .fn()
+          .mockRejectedValue(new Error('Database error'));
 
         await deleteBlog(req, res);
 
         expect(res.status).toHaveBeenCalledWith(500);
         expect(res.json).toHaveBeenCalledWith({ error: 'Database error' });
       });
-      
     });
   });
 
