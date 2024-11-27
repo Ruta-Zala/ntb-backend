@@ -1,5 +1,5 @@
-const mongo = require('../doc-db')
+import { DB, ObjectId } from '../doc-db/index.js';
 
-const db = new mongo();
+const db = new DB();
 
-module.exports = db
+export { db, ObjectId };

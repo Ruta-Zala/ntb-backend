@@ -1,87 +1,100 @@
-require('dotenv').config()
+import dotenv from 'dotenv';
+import express from 'express';
+import cors from 'cors';
+import connectToDB from './doc-db/database.js';
+import blogRoutes from './routes/blogRoutes.js';
+import axios from 'axios';
+import utils from './utils/index.js';
+import usersRoutes from './routes/users.js';
+import userRoutes from './routes/user.js';
+import usersSearchByEmailRoutes from './routes/usersSearchByEmail.js';
 
-const express = require('express');
-const cors = require('cors')
-const axios = require('axios')
-const utils = require('./utils'); 
+dotenv.config();
 
-var corsAllow = ['https://networkingtoolbox.cisco.com', 'http://localhost:3000',]
+// CORS configuration
+const corsAllow = [
+  'https://networkingtoolbox.cisco.com',
+  'http://localhost:3000',
+];
 
-var corsOptionsDelegate = function (req, callback) {
-  var corsOptions;
+const corsOptionsDelegate = function (req, callback) {
+  let corsOptions;
   if (corsAllow.indexOf(req.header('Origin')) !== -1) {
-    corsOptions = { origin: true } 
+    corsOptions = { origin: true };
   } else {
-    corsOptions = { origin: false }
+    corsOptions = { origin: false };
   }
-  callback(null, corsOptions)
-}
+  callback(null, corsOptions);
+};
 
 const app = express();
-app.use(express.json());
-app.set('port', process.env.PORT || 30001);
-app.use(cors(corsOptionsDelegate))
+const port =
+  process.env.PORT || (process.env.NODE_ENV === 'test' ? 30002 : 30001); // Different port for test environment
+app.set('port', port);
 
-app.use(async function (req, res, next) {
-  let proceed = false
+// Middleware
+app.use(express.json()); // Parse JSON requests
+connectToDB(); // Connect to the database
+app.use(cors(corsOptionsDelegate)); // Apply CORS options
+
+// JWT Validation Middleware (for all routes except '/' and '/api/blogs')
+const jwtValidationMiddleware = async (req, res, next) => {
+  let proceed = false;
   try {
-    let reqHeadersCopy = JSON.parse(JSON.stringify(req.headers));
-    let incomingJwtToken
-    if (reqHeadersCopy.hasOwnProperty("authorization")) {
-      incomingJwtToken = await utils.getJWT(req)
+    // Skip validation for the '/' and '/api/blogs' routes
+    if (req.path === '/' || req.path.startsWith('/api/blogs')) {
+      return next();
     }
-    if(incomingJwtToken !== null && incomingJwtToken !== undefined){
-        //front-end request. Validate against Universal Auth API
-        try {
-          let headers = {"Authorization":"Bearer " + incomingJwtToken}     
-          const response = await axios({
-            method: 'get',
-            url:  'https://auth-validate.wbx.ninja/cortex/validate', //todo update this with new URL after NT UA is in place
-            headers: headers
-          })
-          if(response.status === 200){
-            proceed = true
-          }       
-        } catch (e) {
-          if(e.response.data.statusCode === 401){
-            res.sendStatus(401)
-            proceed = false
-          }       
-        }
-    } else {
-      if(!proceed){
-        if (!res.headersSent) {
-          res.sendStatus(401)
+
+    // Check for the Authorization header
+    const authorizationHeader = req.headers['authorization'];
+    if (authorizationHeader) {
+      const incomingJwtToken = await utils.getJWT(req);
+      if (incomingJwtToken) {
+        // Validate JWT against external API
+        const headers = { Authorization: `Bearer ${incomingJwtToken}` };
+        const response = await axios.get(
+          'https://auth-validate.wbx.ninja/cortex/validate',
+          { headers },
+        );
+
+        if (response.status === 200) {
+          proceed = true; // Proceed if token is valid
         }
       }
     }
-  } catch (e) {
-    console.log('failed to get info from jwt:', e.message)
-    if (!res.headersSent) {
-      res.sendStatus(401)
+
+    // If token is invalid or not provided, respond with Unauthorized
+    if (!proceed) {
+      return res.sendStatus(401); // Unauthorized
     }
-  } 
-  // continue processing
-  if(proceed){
-    next()
-  } else {
-    if (!res.headersSent) {
-      res.sendStatus(401)
-    }
+  } catch (error) {
+    console.log('JWT Validation failed:', error.message);
+    return res.sendStatus(401); // Unauthorized on error
   }
-})
+
+  next(); // Continue to the next middleware/route handler
+};
+
+app.use(jwtValidationMiddleware);
 
 /* Routes */
-app.use('/api/v1/user', require('./routes/user'))
-app.use('/api/v1/users', require('./routes/users'))
-app.use('/api/v1/usersSearchByEmail', require('./routes/usersSearchByEmail'))
+app.use('/api/blogs', blogRoutes);
+app.use('/api/v1/user', userRoutes);
+app.use('/api/v1/users', usersRoutes); // Users routes
+app.use('/api/v1/usersSearchByEmail', usersSearchByEmailRoutes); // Search by email routes
 
-app.use(function (req, res, next) {
-  res.status(404).send("Route not found!")
-})
+// 404 Route for unmatched endpoints
+app.use((req, res) => {
+  res.status(404).send('Route not found!');
+});
 
+// Start the server
+const server = app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
 
-/* Listen for incoming http requests */
-const server = app.listen(app.get('port'), () => {
-})
-server.keepAliveTimeout = 60000
+// Server keep-alive timeout
+server.keepAliveTimeout = 60000;
+
+export { app, server };
