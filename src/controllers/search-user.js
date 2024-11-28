@@ -4,7 +4,7 @@ import utils from '../utils/index.js';
 export const findUserByEmail = async (req, res) => {
   try {
     const query = { email: req.params.email };
-    const results = await model.findOne(query);
+    const results = await model.find(query);
 
     if (results) {
       const jwt = utils.getUsersJwt(req);

@@ -6,7 +6,6 @@ import blogRoutes from './routes/blogRoutes.js';
 import axios from 'axios';
 import utils from './utils/index.js';
 import usersRoutes from './routes/users.js';
-import userRoutes from './routes/user.js';
 import usersSearchByEmailRoutes from './routes/usersSearchByEmail.js';
 
 dotenv.config();
@@ -33,25 +32,22 @@ const port =
 app.set('port', port);
 
 // Middleware
-app.use(express.json()); // Parse JSON requests
-connectToDB(); // Connect to the database
-app.use(cors(corsOptionsDelegate)); // Apply CORS options
+app.use(express.json());
+connectToDB();
+app.use(cors(corsOptionsDelegate));
 
-// JWT Validation Middleware (for all routes except '/' and '/api/blogs')
+// JWT Validation Middleware
 const jwtValidationMiddleware = async (req, res, next) => {
   let proceed = false;
   try {
-    // Skip validation for the '/' and '/api/blogs' routes
     if (req.path === '/' || req.path.startsWith('/api/blogs')) {
       return next();
     }
 
-    // Check for the Authorization header
     const authorizationHeader = req.headers['authorization'];
     if (authorizationHeader) {
       const incomingJwtToken = await utils.getJWT(req);
       if (incomingJwtToken) {
-        // Validate JWT against external API
         const headers = { Authorization: `Bearer ${incomingJwtToken}` };
         const response = await axios.get(
           'https://auth-validate.wbx.ninja/cortex/validate',
@@ -59,32 +55,29 @@ const jwtValidationMiddleware = async (req, res, next) => {
         );
 
         if (response.status === 200) {
-          proceed = true; // Proceed if token is valid
+          proceed = true;
         }
       }
     }
 
-    // If token is invalid or not provided, respond with Unauthorized
     if (!proceed) {
-      return res.sendStatus(401); // Unauthorized
+      return res.sendStatus(401);
     }
   } catch (error) {
     console.log('JWT Validation failed:', error.message);
-    return res.sendStatus(401); // Unauthorized on error
+    return res.sendStatus(401);
   }
 
-  next(); // Continue to the next middleware/route handler
+  next();
 };
 
 app.use(jwtValidationMiddleware);
 
 /* Routes */
 app.use('/api/blogs', blogRoutes);
-app.use('/api/v1/user', userRoutes);
-app.use('/api/v1/users', usersRoutes); // Users routes
-app.use('/api/v1/usersSearchByEmail', usersSearchByEmailRoutes); // Search by email routes
+app.use('/api/v1/users', usersRoutes);
+app.use('/api/v1/usersSearchByEmail', usersSearchByEmailRoutes);
 
-// 404 Route for unmatched endpoints
 app.use((req, res) => {
   res.status(404).send('Route not found!');
 });
@@ -94,7 +87,6 @@ const server = app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
 
-// Server keep-alive timeout
 server.keepAliveTimeout = 60000;
 
 export { app, server };

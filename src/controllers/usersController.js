@@ -1,5 +1,5 @@
 import model from '../models/users.js';
-import { db, ObjectId } from '../models/db.js';
+import { ObjectId } from '../models/db.js';
 import utils from '../utils/index.js';
 
 export const getAllUsers = async (req, res) => {
@@ -86,8 +86,6 @@ export const updateUser = async (req, res) => {
   try {
     const jwt = utils.getUsersJwt(req);
 
-    console.log('User ID from URL:', req.params.id);
-
     const isUserAuthorized =
       jwt.email === req.body.email || jwt.accessLevel === 'admin';
 
@@ -106,18 +104,16 @@ export const updateUser = async (req, res) => {
 
     const query = { _id: new ObjectId(userId) };
     const updates = { ...req.body, updatedAt: new Date() };
-    const results = await db.updateOne(
-      'networking_toolbox_data',
-      'users',
-      query,
-      { $set: updates },
-    );
+    const results = await model.updateOne(query, { $set: updates });
 
     if (results.matchedCount === 0) {
       return res.status(404).send(`No user found matching _id ${userId}`);
     }
 
-    return res.status(200).send({ message: 'User updated successfully' });
+    const updatedUser = await model.findOne(query);
+    return res
+      .status(200)
+      .send({ message: 'User updated successfully', updatedUser });
   } catch (error) {
     console.error('Error updating user:', error);
     return res
@@ -130,25 +126,24 @@ export const updateUser = async (req, res) => {
 
 export const deleteUser = async (req, res) => {
   try {
-    if (!req.query.id || !req.query.id.length) {
+    const userId = req.params.id;
+    if (!userId || !userId.length) {
       return res
         .status(400)
-        .send('Invalid input. id is a required URL query parameter.');
+        .send('Invalid input. id is a required URL parameter.');
     }
 
     const jwt = utils.getUsersJwt(req);
     const isUser = jwt.email === req.body.email;
 
     if (isUser) {
-      const query = { _id: new ObjectId(req.query.id) };
+      const query = { _id: new ObjectId(userId) };
       const results = await model.removeOne(query);
 
       if (results.acknowledged && results.deletedCount === 1) {
-        return res.status(200).send();
+        return res.status(200).send('user deleted successfully');
       } else {
-        return res
-          .status(404)
-          .send(`No user found matching _id ${req.query.id}`);
+        return res.status(404).send(`No user found matching _id ${userId}`);
       }
     } else {
       return res.status(403).send('You do not have access to this resource');

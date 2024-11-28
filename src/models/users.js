@@ -15,6 +15,9 @@ export default {
   async replaceOne(query) {
     return db.replaceOne('networking_toolbox_data', collection, query);
   },
+  async updateOne(filter, update) {
+    return db.updateOne('networking_toolbox_data', collection, filter, update);
+  },
   async insertOne(data) {
     const results = await db.insertOne(
       'networking_toolbox_data',
