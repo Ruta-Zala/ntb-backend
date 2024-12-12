@@ -6,7 +6,7 @@ import blogRoutes from './routes/blogRoutes.js';
 import axios from 'axios';
 import utils from './utils/index.js';
 import usersRoutes from './routes/users.js';
-import usersSearchByEmailRoutes from './routes/usersSearchByEmail.js';
+import usersSearchByEmailRoutes from './routes/search-user.js';
 
 dotenv.config();
 

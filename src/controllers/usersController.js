@@ -38,12 +38,14 @@ export const getUserById = async (req, res) => {
 
 export const createUser = async (req, res) => {
   try {
-    const jwt = utils.getUsersJwt(req);
-    const isUser = jwt.email === req.body.email;
-
-    if (utils.isObjectEmpty(req.body)) {
+    // First, check if data is missing
+    if (Object.keys(req.body).length === 0) {
       return res.status(400).send('Failed to create new User. Data missing.');
     }
+
+    // Then, handle JWT and authorization
+    const jwt = utils.getUsersJwt(req);
+    const isUser = jwt.email === req.body.email;
 
     if (isUser) {
       const {
@@ -84,6 +86,11 @@ export const createUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   try {
+    const userId = req.params.id;
+    if (!ObjectId.isValid(userId)) {
+      return res.status(400).send(`Invalid user ID: ${userId}`);
+    }
+
     const jwt = utils.getUsersJwt(req);
 
     const isUserAuthorized =
@@ -95,11 +102,6 @@ export const updateUser = async (req, res) => {
 
     if (utils.isObjectEmpty(req.body)) {
       return res.status(400).send('Failed to update User. Data missing.');
-    }
-
-    const userId = req.params.id;
-    if (!ObjectId.isValid(userId)) {
-      return res.status(400).send(`Invalid user ID: ${userId}`);
     }
 
     const query = { _id: new ObjectId(userId) };
@@ -114,13 +116,8 @@ export const updateUser = async (req, res) => {
     return res
       .status(200)
       .send({ message: 'User updated successfully', updatedUser });
-  } catch (error) {
-    console.error('Error updating user:', error);
-    return res
-      .status(500)
-      .send(
-        'Server error. Please contact an administrator if you continue to see this error.',
-      );
+  } catch (e) {
+    res.status(500).send(`Error updating user: ${e.message}`);
   }
 };
 
@@ -149,6 +146,6 @@ export const deleteUser = async (req, res) => {
       return res.status(403).send('You do not have access to this resource');
     }
   } catch (e) {
-    return res.status(500).send(e.message);
+    return res.status(500).send(`Error deleting user: ${e.message}`);
   }
 };

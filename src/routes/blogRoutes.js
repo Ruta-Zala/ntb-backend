@@ -1,18 +1,30 @@
 import express from 'express';
 import {
   createBlog,
-  getBlogs,
+  getPresignedUrl,
   getBlogById,
+  getBlogBySlug,
   updateBlog,
+  addSection,
+  updateBlogStatus,
+  deleteImage,
   deleteBlog,
+  deleteSection,
+  getAllBlogs,
 } from '../controllers/blogController.js';
 
 const router = express.Router();
 
+router.get('/presigned-url', getPresignedUrl);
 router.post('/', createBlog);
-router.get('/', getBlogs);
-router.get('/:id', getBlogById);
-router.put('/:id', updateBlog);
-router.delete('/:id', deleteBlog);
+router.post('/:blogId/sections', addSection);
+router.put('/:blogId', updateBlog);
+router.put('/Status/:blogId', updateBlogStatus);
+router.delete('/image', deleteImage);
+router.delete('/:blogId/section/:sectionId', deleteSection);
+router.delete('/:blogId', deleteBlog);
+router.get('/:slug', getBlogBySlug);
+router.get('/:blogId', getBlogById);
+router.get('/', getAllBlogs);
 
 export default router;

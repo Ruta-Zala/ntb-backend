@@ -4,7 +4,7 @@ import utils from '../utils/index.js';
 export const findUserByEmail = async (req, res) => {
   try {
     const query = { email: req.params.email };
-    const results = await model.find(query);
+    const results = await model.findOne(query);
 
     if (results) {
       const jwt = utils.getUsersJwt(req);
@@ -20,8 +20,7 @@ export const findUserByEmail = async (req, res) => {
       const message = `No user found matching email ${req.params.email}`;
       return res.status(404).send(message);
     }
-  } catch (e) {
-    console.error('Error in findUserByEmail:', e.message);
-    return res.status(500).send(e.message);
+  } catch {
+    return res.status(500).send('An unexpected error occurred.');
   }
 };
