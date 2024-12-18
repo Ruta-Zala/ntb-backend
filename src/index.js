@@ -7,6 +7,9 @@ import axios from 'axios';
 import utils from './utils/index.js';
 import usersRoutes from './routes/users.js';
 import usersSearchByEmailRoutes from './routes/search-user.js';
+import PresignedUrl from './routes/presignedurlRoutes.js';
+import websitesetting from './routes/websitesetting.js';
+import menu from './routes/menuRoutes.js';
 
 dotenv.config();
 
@@ -40,7 +43,13 @@ app.use(cors(corsOptionsDelegate));
 const jwtValidationMiddleware = async (req, res, next) => {
   let proceed = false;
   try {
-    if (req.path === '/' || req.path.startsWith('/api/blogs')) {
+    if (
+      req.path === '/' ||
+      req.path.startsWith('/api/v1/blogs') ||
+      req.path.startsWith('/api/v1/website') ||
+      req.path.startsWith('/api/v1/menu') ||
+      req.path.startsWith('/api/v1/presigned-url')
+    ) {
       return next();
     }
 
@@ -74,7 +83,10 @@ const jwtValidationMiddleware = async (req, res, next) => {
 app.use(jwtValidationMiddleware);
 
 /* Routes */
-app.use('/api/blogs', blogRoutes);
+app.use('/api/v1/website', websitesetting);
+app.use('/api/v1/presigned-url', PresignedUrl);
+app.use('/api/v1/menu', menu);
+app.use('/api/v1/blogs', blogRoutes);
 app.use('/api/v1/users', usersRoutes);
 app.use('/api/v1/usersSearchByEmail', usersSearchByEmailRoutes);
 

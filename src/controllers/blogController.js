@@ -1,13 +1,12 @@
 import Blog from '../models/blogModel.js';
+import s3Client from '../config/s3Setup.js';
 import {
-  S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
   ListObjectsCommand,
   DeleteObjectsCommand,
   HeadObjectCommand,
 } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import slugify from 'slugify';
 import dotenv from 'dotenv';
@@ -16,68 +15,6 @@ import fetch from 'node-fetch';
 dotenv.config();
 
 // Initialize the S3 Client
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
-/**
- * Generate Presigned URL for image uploads
- */
-export const getPresignedUrl = async (req, res) => {
-  try {
-    const { type, blogId, sectionId, blockId } = req.query;
-    if (!type) {
-      return res
-        .status(400)
-        .json({ message: 'Type is required (e.g., thumbnail, blogImage).' });
-    }
-
-    let key = '';
-
-    switch (type) {
-      case 'thumbnail':
-        if (blogId) {
-          key = `media/blogs/${blogId}/thumbnail.jpg`;
-        } else {
-          key = `temp/thumbnail-${Date.now()}.jpg`;
-        }
-        break;
-      case 'blogImage':
-        if (!blogId || !sectionId || !blockId) {
-          return res.status(400).json({
-            message:
-              'blogId, sectionId, and blockId are required for blog images.',
-          });
-        }
-        key = `media/blogs/${blogId}/${sectionId}/${blockId}.jpg`;
-        break;
-      default:
-        return res.status(400).json({
-          message: 'Invalid type. Supported types are: thumbnail, blogImage.',
-        });
-    }
-
-    const presignedUrl = await getSignedUrl(
-      s3Client,
-      new PutObjectCommand({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: key,
-      }),
-      { expiresIn: 60 * 5 },
-    );
-
-    res.status(200).json({
-      presignedUrl,
-      fileUrl: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`,
-    });
-  } catch (error) {
-    console.error('Error generating presigned URL:', error);
-    res.status(500).json({ message: 'Failed to generate presigned URL.' });
-  }
-};
 
 /**
  * Create Blog Metadata

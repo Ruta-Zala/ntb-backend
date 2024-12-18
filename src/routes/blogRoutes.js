@@ -1,7 +1,6 @@
 import express from 'express';
 import {
   createBlog,
-  getPresignedUrl,
   getBlogById,
   getBlogBySlug,
   updateBlog,
@@ -15,7 +14,6 @@ import {
 
 const router = express.Router();
 
-router.get('/presigned-url', getPresignedUrl);
 router.post('/', createBlog);
 router.post('/:blogId/sections', addSection);
 router.put('/:blogId', updateBlog);
