@@ -63,20 +63,54 @@ class DB {
     });
   }
 
-  find(db, collection, query = {}, projection, sort) {
+  countDocuments(db, collection, query = {}) {
     return new Promise((resolve, reject) => {
       this.getConnection(db)
         .then((client) => {
           client
             .db(db)
             .collection(collection)
-            .find(query)
-            .project(projection)
-            .sort(sort)
-            .toArray((queryError, doc) => {
-              if (queryError) reject(queryError);
-              else resolve(doc);
+            .countDocuments(query, (err, count) => {
+              if (err) reject(err);
+              else resolve(count);
             });
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+  find(db, collection, query = {}, projection = {}, options = {}) {
+    return new Promise((resolve, reject) => {
+      this.getConnection(db)
+        .then((client) => {
+          const cursor = client
+            .db(db)
+            .collection(collection)
+            .find(query)
+            .project(projection);
+
+          // Only apply sorting if `options.sort` exists and is valid
+          if (
+            options.sort &&
+            typeof options.sort === 'object' &&
+            Object.keys(options.sort).length > 0
+          ) {
+            cursor.sort(options.sort);
+          }
+
+          // Apply skip and limit if provided
+          if (options.skip) {
+            cursor.skip(options.skip);
+          }
+          if (options.limit) {
+            cursor.limit(options.limit);
+          }
+
+          cursor.toArray((queryError, doc) => {
+            if (queryError) reject(queryError);
+            else resolve(doc);
+          });
         })
         .catch((e) => {
           reject(e);

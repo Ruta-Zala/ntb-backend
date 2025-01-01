@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const collection = 'users';
+const collection = 'Role';
 
 export default {
   async findOne(query, options) {
@@ -26,9 +26,6 @@ export default {
   },
   async replaceOne(query) {
     return db.replaceOne(process.env.MONGO_DATABASE, collection, query);
-  },
-  async updateOne(filter, update) {
-    return db.updateOne(process.env.MONGO_DATABASE, collection, filter, update);
   },
   async insertOne(data) {
     const results = await db.insertOne(

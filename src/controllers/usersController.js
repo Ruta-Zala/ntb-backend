@@ -4,13 +4,33 @@ import utils from '../utils/index.js';
 
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await model.find();
-    if (users.length > 0) {
-      return res.status(200).send(users);
-    } else {
-      return res.status(404).send('No users found');
-    }
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    console.log(
+      `Received pagination parameters: page=${page}, limit=${limit}, skip=${skip}`,
+    );
+
+    // Pagination options
+    const options = { skip, limit };
+
+    const users = await model.find({}, {}, options);
+
+    const totalUsers = await model.countDocuments({});
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    console.log(`Total Users: ${totalUsers}, Total Pages: ${totalPages}`);
+
+    return res.status(200).json({
+      users,
+      totalUsers,
+      totalPages,
+      currentPage: page,
+      pageSize: limit,
+    });
   } catch (e) {
+    console.error(`Error occurred: ${e.message}`);
     return res.status(500).send(e.message);
   }
 };

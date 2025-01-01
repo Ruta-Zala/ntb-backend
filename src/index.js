@@ -8,7 +8,7 @@ import utils from './utils/index.js';
 import usersRoutes from './routes/users.js';
 import usersSearchByEmailRoutes from './routes/search-user.js';
 import PresignedUrl from './routes/presignedurlRoutes.js';
-import websitesetting from './routes/websitesetting.js';
+import roles from './routes/roles.js';
 import menu from './routes/menuRoutes.js';
 
 dotenv.config();
@@ -43,16 +43,6 @@ app.use(cors(corsOptionsDelegate));
 const jwtValidationMiddleware = async (req, res, next) => {
   let proceed = false;
   try {
-    if (
-      req.path === '/' ||
-      req.path.startsWith('/api/v1/blogs') ||
-      req.path.startsWith('/api/v1/website') ||
-      req.path.startsWith('/api/v1/menu') ||
-      req.path.startsWith('/api/v1/presigned-url')
-    ) {
-      return next();
-    }
-
     const authorizationHeader = req.headers['authorization'];
     if (authorizationHeader) {
       const incomingJwtToken = await utils.getJWT(req);
@@ -81,9 +71,12 @@ const jwtValidationMiddleware = async (req, res, next) => {
 };
 
 app.use(jwtValidationMiddleware);
-
+app.use(
+  '/api/v1/presigned-url',
+  express.raw({ type: 'image/*', limit: '10mb' }), // Only parse requests with `Content-Type: image/*`
+);
 /* Routes */
-app.use('/api/v1/website', websitesetting);
+app.use('/api/v1/roles', roles);
 app.use('/api/v1/presigned-url', PresignedUrl);
 app.use('/api/v1/menu', menu);
 app.use('/api/v1/blogs', blogRoutes);
